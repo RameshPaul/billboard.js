@@ -1369,7 +1369,7 @@ export default class Options {
 			legend_position: "bottom",
 			legend_inset_anchor: "top-left",
 			legend_inset_x: 10,
-			legend_inset_y: 0,
+			legend_inset_y: 10,
 			legend_inset_step: undefined,
 			legend_item_onclick: undefined,
 			legend_item_onover: undefined,

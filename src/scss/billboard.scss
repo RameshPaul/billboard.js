@@ -1,8 +1,17 @@
 /*-- Chart --*/
+
+$font-family: GothamPro;
+$font-color: #CDD7FF;
+$axis-font-color: #5D5C71;
+$font-size: 16px;
+$graph-title-font-size: 16px;
+$graph-title-text-transform: "uppercase";
+
 .bb {
   svg {
-    font: 10px sans-serif;
+    font: 10px $font-family;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
+    fill: $axis-font-color;
   }
 
   path, line {
@@ -155,7 +164,7 @@
 
 /*-- Title --*/
 .bb-title {
-  font: 14px sans-serif;
+  font: 14px $font-family;
 }
 
 /*-- Tooltip --*/
@@ -293,4 +302,9 @@
     border-radius: 5px;
     cursor: pointer;
   }
+}
+
+h2#title{
+  font-size: $graph-title-font-size;
+  text-transform: $graph-title-text-transform;
 }

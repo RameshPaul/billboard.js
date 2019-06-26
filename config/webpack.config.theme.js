@@ -16,15 +16,16 @@ const rx = /\.scss$/;
 // construct entry point
 const entry = {};
 
-fs.readdirSync(path.resolve(__dirname, `.${srcPath}`)).forEach(file => {
-	if (rx.test(file)) {
-		const key = file.replace(rx, "");
-		const dist = srcPath + file;
+fs.readdirSync(path.resolve(__dirname, `.${srcPath}`))
+	.forEach(file => {
+		if (rx.test(file)) {
+			const key = file.replace(rx, "");
+			const dist = srcPath + file;
 
-		entry[key] = dist;
-		entry[`${key}.min`] = dist;
-	}
-});
+			entry[key] = dist;
+			entry[`${key}.min`] = dist;
+		}
+	});
 
 const config = {
 	entry,
@@ -55,7 +56,8 @@ const config = {
 		}),
 
 		// clean after build
-		new WebpackCleanPlugin(Object.keys(entry).map(v => `${v}.${tmpExt}`), {
+		new WebpackCleanPlugin(Object.keys(entry)
+			.map(v => `${v}.${tmpExt}`), {
 			basePath: distPath
 		}),
 		new MiniCssExtractPlugin({

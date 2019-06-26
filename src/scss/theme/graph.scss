@@ -1,7 +1,8 @@
 /*-- Graph Theme --*/
 @charset "UTF-8";
 
-$font-family: Helvetica, 'Apple SD Gothic Neo', Arial, sans-serif, "nanumgothic", "Dotum";
+//$font-family: Helvetica, 'Apple SD Gothic Neo', Arial, sans-serif, "nanumgothic", "Dotum";
+$font-family: GothamPro;
 $axis-color: #8c8c8c;
 @mixin select-none {
     -webkit-user-select: none;
