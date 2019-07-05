@@ -16,8 +16,8 @@ import {
 import {transition as d3Transition} from "d3-transition";
 import Axis from "../axis/Axis";
 import CLASS from "../config/classes";
-import {isMobile} from "../internals/browser";
-import {notEmpty, asHalfPixel, getOption, isValue, isArray, isFunction, isString, isNumber, isObject, callFn, sendStats, sortValue} from "./util";
+import {document, window} from "../internals/browser";
+import {notEmpty, asHalfPixel, getOption, isValue, isArray, isFunction, isString, isNumber, isObject, callFn, sortValue} from "./util";
 
 /**
  * Internal chart class.
@@ -40,7 +40,6 @@ export default class ChartInternal {
 	beforeInit() {
 		const $$ = this;
 
-		$$.config.stats && sendStats();
 		$$.callPluginHook("$beforeInit");
 
 		// can do something
@@ -342,7 +341,7 @@ export default class ChartInternal {
 	initChartElements() {
 		const $$ = this;
 
-		["Bar", "Line", "Bubble", "Arc", "Gauge", "Pie", "Radar"].forEach(v => {
+		["Bar", "Radar", "Line", "Bubble", "Arc", "Gauge", "Pie"].forEach(v => {
 			$$[`init${v}`]();
 		});
 
@@ -986,10 +985,10 @@ export default class ChartInternal {
 			x = $$.arcWidth / 2;
 			y = $$.arcHeight / 2;
 		} else if (target === "radar") {
-			const diff = ($$.arcWidth - $$.arcHeight) / 2;
+			const [width] = $$.getRadarSize();
 
-			x = Math.max(diff, 0) + 4;
-			y = diff < 0 ? Math.abs(diff) : asHalfPixel($$.margin.top);
+			x = $$.width / 2 - width;
+			y = asHalfPixel($$.margin.top);
 		}
 
 		return `translate(${x}, ${y})`;
@@ -1286,6 +1285,10 @@ export default class ChartInternal {
 	convertInputType() {
 		const $$ = this;
 		const config = $$.config;
+		const isMobile = (
+			window.navigator && "maxTouchPoints" in window.navigator && window.navigator.maxTouchPoints > 0
+		) || false;
+
 		const hasMouse = config.interaction_inputType_mouse && !isMobile ? ("onmouseover" in window) : false;
 		let hasTouch = false;
 

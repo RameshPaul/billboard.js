@@ -47,13 +47,9 @@ jobs:
         skip_cleanup: true
         script:
           - npm run release
-        after_success:
-          - chmod +x ./config/deploy.sh
-        'on':
+        on:
           repo: naver/billboard.js
-          branches:
-            only:
-              - latest
-              - next
-
-
+          all_branches: true
+          condition: $TRAVIS_BRANCH =~ ^latest|next$
+      after_deploy:
+        - bash ./config/deploy.sh

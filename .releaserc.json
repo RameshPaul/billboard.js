@@ -1,6 +1,9 @@
 {
   "plugins": [
     "@semantic-release/commit-analyzer",
+    ["@semantic-release/exec", {
+      "prepareCmd": "cross-env VERSION=${nextRelease.version} npm run build"
+    }],
     "@semantic-release/release-notes-generator",
     "@semantic-release/changelog",
     "@semantic-release/npm",
