@@ -222,61 +222,66 @@ export default class Options {
 			 * @name onover
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onover: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onover: function(ctx) {
 			 *   ...
 			 * }
 			 */
-			onover: () => {},
+			onover: undefined,
 
 			/**
 			 * Set a callback to execute when mouse/touch leaves the chart.
 			 * @name onout
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onout: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onout: function(ctx) {
 			 *   ...
 			 * }
 			 */
-			onout: () => {},
+			onout: undefined,
 
 			/**
 			 * Set a callback to execute when user resizes the screen.
 			 * @name onresize
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onresize: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onresize: function(ctx) {
 			 *   ...
 			 * }
 			 */
-			onresize: () => {},
+			onresize: undefined,
 
 			/**
 			 * SSet a callback to execute when screen resize finished.
 			 * @name onresized
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onresized: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onresized: function(ctx) {
 			 *   ...
 			 * }
 			 */
-			onresized: () => {},
+			onresized: undefined,
 
 			/**
 			 * Set a callback to execute before the chart is initialized
 			 * @name onbeforeinit
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onbeforeinit: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onbeforeinit: function(ctx) {
 			 *   ...
 			 * }
 			 */
@@ -287,22 +292,24 @@ export default class Options {
 			 * @name oninit
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * oninit: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * oninit: function(ctx) {
 			 *   ...
 			 * }
 			 */
-			oninit: () => {},
+			oninit: undefined,
 
 			/**
 			 * Set a callback to execute after the chart is initialized
 			 * @name onafterinit
 			 * @memberof Options
 			 * @type {Function}
-			 * @default function(){}
+			 * @default undefined
 			 * @example
-			 * onafterinit: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onafterinit: function(ctx) {
 			 *   ...
 			 * }
 			 */
@@ -315,7 +322,8 @@ export default class Options {
 			 * @type {Function}
 			 * @default undefined
 			 * @example
-			 * onrendered: function() {
+			 * // @param {Chart} ctx - Instance itself
+			 * onrendered: function(ctx) {
 			 *   ...
 			 * }
 			 */
@@ -567,6 +575,9 @@ export default class Options {
 			 *  - `j` is the sub index of the data point where the label is shown.<br><br>
 			 * Formatter function can be defined for each data by specifying as an object and D3 formatter function can be set (ex. d3.format('$'))
  			 * @property {String|Object} [data.labels.colors] Set label text colors.
+			 * @property {Boolean|Object} [data.labels.overlap=true] Prevents label overlap using [Voronoi layout](https://en.wikipedia.org/wiki/Voronoi_diagram) if set to `false`.
+    		 * @property {Number} [data.labels.overlap.extent=1] Set extent of label overlap prevention.
+     		 * @property {Number} [data.labels.overlap.area=0] Set minimum area needed to show a data label.
 			 * @property {Number} [data.labels.position.x=0] x coordinate position, relative the original.
 			 * @property {NUmber} [data.labels.position.y=0] y coordinate position, relative the original.
 			 * @memberof Options
@@ -575,6 +586,7 @@ export default class Options {
 			 * @see [Demo](https://naver.github.io/billboard.js/demo/#Data.DataLabel)
 			 * @see [Demo: label colors](https://naver.github.io/billboard.js/demo/#Data.DataLabelColors)
 			 * @see [Demo: label format](https://naver.github.io/billboard.js/demo/#Data.DataLabelFormat)
+			 * @see [Demo: label overlap](https://naver.github.io/billboard.js/demo/#Data.DataLabelOverlap)
 			 * @see [Demo: label position](https://naver.github.io/billboard.js/demo/#Data.DataLabelPosition)
 			 * @example
 			 * data: {
@@ -1061,6 +1073,26 @@ export default class Options {
 			 *       data2: "line"
 			 *   }
 			 * }
+			 *
+			 * // for 'bubble' type, data can contain dimension value:
+			 * // - an array of [y, z] data following the order
+			 * // - or an object with 'y' and 'z' key value
+			 * // 'y' is for y axis coordination and 'z' is the bubble radius value
+			 * data: {
+			 *   rows: [
+			 *      ["data1", "data2"],
+			 *      [
+			 *        // or {y:10, z: 140}, 120
+			 *        [10, 140], 120
+			 *      ],
+			 *      [[100, 30], 55],
+			 *      [[50, 100], 60]
+			 *   ],
+			 *   types: {
+			 *       data1: "bubble",
+			 *       data2: "line"
+			 *   }
+			 * }
 			 */
 			data_rows: undefined,
 
@@ -1093,21 +1125,40 @@ export default class Options {
 			 *   ],
 			 *   type: "area-line-range"
 			 * }
+			 *
+			 * // for 'bubble' type, data can contain dimension value:
+			 * // - an array of [y, z] data following the order
+			 * // - or an object with 'y' and 'z' key value
+			 * // 'y' is for y axis coordination and 'z' is the bubble radius value
+			 * data: {
+			 *   columns: [
+			 *      ["data1",
+			 *          [10, 140],  // or {y:10, z: 140}
+			 *          [100, 30],
+			 *          [50, 100]
+			 *      ]
+			 *   ],
+			 *   type: "bubble"
+			 * }
 			 */
 			data_columns: undefined,
 
 			/**
 			 * Used if loading JSON via data.url.
+			 * - **Available Values:**
+			 *   - json
+			 *   - csv
+			 *   - tsv
 			 * @name data․mimeType
 			 * @memberof Options
 			 * @type {String}
-			 * @default undefined
+			 * @default csv
 			 * @example
 			 * data: {
 			 *     mimeType: "json"
 			 * }
 			 */
-			data_mimeType: undefined,
+			data_mimeType: "csv",
 
 			/**
 			 * Choose which JSON object keys correspond to desired data.
@@ -1165,17 +1216,17 @@ export default class Options {
 			 * @see [Demo](https://naver.github.io/billboard.js/demo/#Interaction.SubChart)
 			 * @example
 			 *  subchart: {
-			 * 		axis: {
-			 * 			x: {
-			 * 				show: true,
-			 * 				tick: {
-			 * 					show: true,
-			 * 					text: {
-			 * 						show: false
-			 * 					}
-			 * 				}
-			 * 			}
-			 * 		},
+			 *      axis: {
+			 *      	x: {
+			 *      	  show: true,
+			 *      	    tick: {
+			 *      	      show: true,
+			 *      	      text: {
+			 *      	        show: false
+			 *      	      }
+			 *      	    }
+			 *      	}
+			 *      },
 			 *      show: true,
 			 *      size: {
 			 *          height: 20
@@ -1881,7 +1932,11 @@ export default class Options {
 
 			/**
 			 * Set label on x axis.<br><br>
-			 *  You can set x axis label and change its position by this option. string and object can be passed and we can change the poisiton by passing object that has position key. Available position differs according to the axis direction (vertical or horizontal). If string set, the position will be the default.
+			 * You can set x axis label and change its position by this option.
+			 * `string` and `object` can be passed and we can change the poisiton by passing object that has position key.<br>
+			 * Available position differs according to the axis direction (vertical or horizontal).
+			 * If string set, the position will be the default.
+			 *
 			 *  - **If it's horizontal axis:**
 			 *    - inner-right [default]
 			 *    - inner-center
@@ -2080,11 +2135,12 @@ export default class Options {
 
 			/**
 			 * Set label on y axis.<br><br>
-			 * You can set y axis label and change its position by this option. This option works in the same way as axis.x.label.
+			 * You can set y axis label and change its position by this option. This option works in the same way as [axis.x.label](#.axis%25E2%2580%25A4x%25E2%2580%25A4label).
 			 * @name axis․y․label
 			 * @memberof Options
 			 * @type {String|Object}
 			 * @default {}
+			 * @see [axis.x.label](#.axis%25E2%2580%25A4x%25E2%2580%25A4label) for position string value.
 			 * @example
 			 * axis: {
 			 *   y: {
@@ -2122,6 +2178,44 @@ export default class Options {
 			 * }
 			 */
 			axis_y_tick_format: undefined,
+
+			/**
+			 * Setting for culling ticks.<br><br>
+			 * If true is set, the ticks will be culled, then only limitted tick text will be shown. This option does not hide the tick lines. If false is set, all of ticks will be shown.<br><br>
+			 * We can change the number of ticks to be shown by axis.y.tick.culling.max.
+			 * @name axis․y․tick․culling
+			 * @memberof Options
+			 * @type {Boolean}
+			 * @default false
+			 * @example
+			 * axis: {
+			 *   y: {
+			 *     tick: {
+			 *       culling: false
+			 *     }
+			 *   }
+			 * }
+			 */
+			axis_y_tick_culling: false,
+
+			/**
+			 * The number of tick texts will be adjusted to less than this value.
+			 * @name axis․y․tick․culling․max
+			 * @memberof Options
+			 * @type {Number}
+			 * @default 5
+			 * @example
+			 * axis: {
+			 *   y: {
+			 *     tick: {
+			 *       culling: {
+			 *           max: 5
+			 *       }
+			 *     }
+			 *   }
+			 * }
+			 */
+			axis_y_tick_culling_max: 5,
 
 			/**
 			 * Show y axis outer tick.
@@ -2335,6 +2429,9 @@ export default class Options {
 
 			/**
 			 * Show or hide y2 axis.
+			 * - **NOTE**:
+			 *   - When set to `false` will not generate y2 axis node. In this case, all 'y2' axis related functionality won't work properly.
+			 *   - If need to use 'y2' related options while y2 isn't visible, set the value `true` and control visibility by css display property.
 			 * @name axis․y2․show
 			 * @memberof Options
 			 * @type {Boolean}
@@ -2426,11 +2523,12 @@ export default class Options {
 
 			/**
 			 * Set label on y2 axis.<br><br>
-			 * You can set y2 axis label and change its position by this option. This option works in the same way as axis.x.label.
+			 * You can set y2 axis label and change its position by this option. This option works in the same way as [axis.x.label](#.axis%25E2%2580%25A4x%25E2%2580%25A4label).
 			 * @name axis․y2․label
 			 * @memberof Options
 			 * @type {String|Object}
 			 * @default {}
+			 * @see [axis.x.label](#.axis%25E2%2580%25A4x%25E2%2580%25A4label) for position string value.
 			 * @example
 			 * axis: {
 			 *   y2: {
@@ -2467,6 +2565,44 @@ export default class Options {
 			 * }
 			 */
 			axis_y2_tick_format: undefined,
+
+			/**
+			 * Setting for culling ticks.<br><br>
+			 * If true is set, the ticks will be culled, then only limitted tick text will be shown. This option does not hide the tick lines. If false is set, all of ticks will be shown.<br><br>
+			 * We can change the number of ticks to be shown by axis.y.tick.culling.max.
+			 * @name axis․y2․tick․culling
+			 * @memberof Options
+			 * @type {Boolean}
+			 * @default false
+			 * @example
+			 * axis: {
+			 *   y2: {
+			 *     tick: {
+			 *       culling: false
+			 *     }
+			 *   }
+			 * }
+			 */
+			axis_y2_tick_culling: false,
+
+			/**
+			 * The number of tick texts will be adjusted to less than this value.
+			 * @name axis․y2․tick․culling․max
+			 * @memberof Options
+			 * @type {Number}
+			 * @default 5
+			 * @example
+			 * axis: {
+			 *   y2: {
+			 *     tick: {
+			 *       culling: {
+			 *           max: 5
+			 *       }
+			 *     }
+			 *   }
+			 * }
+			 */
+			axis_y2_tick_culling_max: 5,
 
 			/**
 			 * Show or hide y2 axis outer tick.
@@ -2944,15 +3080,15 @@ export default class Options {
 			 *      	x: [0, 0],  // x1, x2 attributes
 			 *      	y: [0, 0],  // y1, y2 attributes
 			 *      	stops: [
-			 *      		// offset, stop-color, stop-opacity
-			 *      		[0, "#7cb5ec", 1],
+			 *      	  // offset, stop-color, stop-opacity
+			 *      	  [0, "#7cb5ec", 1],
 			 *
-			 *      		// setting 'null' for stop-color, will set its original data color
-			 *      		[0.5, null, 0],
+			 *      	  // setting 'null' for stop-color, will set its original data color
+			 *      	  [0.5, null, 0],
 			 *
-			 *      		// setting 'function' for stop-color, will pass data id as argument.
-			 *      		// It should return color string or null value
-			 *      		[1, function(id) { return id === "data1" ? "red" : "blue"; }, 0],
+			 *      	  // setting 'function' for stop-color, will pass data id as argument.
+			 *      	  // It should return color string or null value
+			 *      	  [1, function(id) { return id === "data1" ? "red" : "blue"; }, 0],
 			 *      	]
 			 *      }
 			 *  }
@@ -3195,6 +3331,8 @@ export default class Options {
 			 * @type {Object}
 			 * @property {Number} [radar.axis.max=undefined] The max value of axis. If not given, it'll take the max value from the given data.
 			 * @property {Boolean} [radar.axis.line.show=true] Show or hide axis line.
+			 * @property {Number} [radar.axis.text.position.x=0] x coordinate position, relative the original.
+			 * @property {NUmber} [radar.axis.text.position.y=0] y coordinate position, relative the original.
 			 * @property {Boolean} [radar.axis.text.show=true] Show or hide axis text.
 			 * @property {Boolean} [radar.direction.clockwise=false] Set the direction to be drawn.
 			 * @property {Number} [radar.level.depth=3] Set the level depth.
@@ -3215,6 +3353,10 @@ export default class Options {
 			 *              show: false
 			 *          },
 			 *          text: {
+			 *              position: {
+			 *              	x: 0,
+			 *              	y: 0
+			 *              },
 			 *              show: false
 			 *          }
 			 *      },
@@ -3238,12 +3380,54 @@ export default class Options {
 			radar_axis_max: undefined,
 			radar_axis_line_show: true,
 			radar_axis_text_show: true,
+			radar_axis_text_position: {},
 			radar_level_depth: 3,
 			radar_level_show: true,
 			radar_level_text_format: x => (x % 1 === 0 ? x : x.toFixed(2)),
 			radar_level_text_show: true,
 			radar_size_ratio: 0.87,
 			radar_direction_clockwise: false,
+
+			/**
+			 * Control the render timing
+			 * @name render
+			 * @memberof Options
+			 * @type {Object}
+			 * @property {Boolean} [render.lazy=true] Make to not render at initialization (enabled by default when bind element's visibility is hidden).
+			 * @property {Boolean} [render.observe=true] Observe bind element's visibility(`display` or `visiblity` inline css property or class value) & render when is visible automatically (for IEs, only works IE11+). When set to **false**, call [`.flush()`](./Chart.html#flush) to render.
+			 * @see [Demo](https://naver.github.io/billboard.js/demo/#ChartOptions.LazyRender)
+			 * @example
+			 *  render: {
+			 *    lazy: true,
+			 *    observe: true
+			 * }
+			 *
+			 * @example
+			 *	// <!-- render.lazy will detect visibility defined -->
+			 *  // (a) <div id='chart' class='hide'></div>
+			 *  // (b) <div id='chart' style='display:none'></div>
+			 *
+			 *  // render.lazy enabled by default when element is hidden
+			 *  var chart = bb.generate({ ... });
+			 *
+			 *  // chart will be rendered automatically when element's visibility changes
+			 *  // Note: works only for inlined css property or class attribute changes
+			 *  document.getElementById('chart').classList.remove('hide')  // (a)
+			 *  document.getElementById('chart').style.display = 'block';  // (b)
+			 *
+			 * @example
+			 *	// chart won't be rendered and not observing bind element's visiblity changes
+			 *  var chart = bb.generate({
+			 *     render: {
+			 *          lazy: true,
+			 *          observe: false
+			 *     }
+			 *  });
+			 *
+			 *  // call at any point when you want to render
+			 *  chart.flush();
+			 */
+			render: {},
 
 			/**
 			 * Show rectangles inside the chart.<br><br>
@@ -3288,15 +3472,15 @@ export default class Options {
 			 * @property {Function|Object} [tooltip.contents] Set custom HTML for the tooltip.<br>
 			 *  Specified function receives data, defaultTitleFormat, defaultValueFormat and color of the data point to show. If tooltip.grouped is true, data includes multiple data points.
 			 * @property {String|HTMLElement} [tooltip.contents.bindto=undefined] Set CSS selector or element reference to bind tooltip.
-			 * @property {String} [tooltip.contents.template=undefined] Set tooltip's template.
 			 *  - **NOTE:** When is specified, will not be updating tooltip's position.
-			 *  - Within template, below syntax will be replaced using template-like syntax string:
-			 *    - {{ ... }}: the doubly curly brackets indicate loop block for data rows
-			 *    - {=CLASS_TOOLTIP}: default tooltip class name `bb-tooltip`.
-			 *    - {=CLASS_TOOLTIP_NAME}: default tooltip data class name (ex. `bb-tooltip-name-data1`)
-			 *    - {=TITLE}: title value
-			 *    - {=COLOR}: data color
-			 *    - {=VALUE}: data value
+			 * @property {String} [tooltip.contents.template=undefined] Set tooltip's template.<br><br>
+			 *  Within template, below syntax will be replaced using template-like syntax string:
+			 *    - **{{ ... }}**: the doubly curly brackets indicate loop block for data rows.
+			 *    - **{=CLASS_TOOLTIP}**: default tooltip class name `bb-tooltip`.
+			 *    - **{=CLASS_TOOLTIP_NAME}**: default tooltip data class name (ex. `bb-tooltip-name-data1`)
+			 *    - **{=TITLE}**: title value.
+			 *    - **{=COLOR}**: data color.
+			 *    - **{=VALUE}**: data value.
 			 * @property {Object} [tooltip.contents.text=undefined] Set additional text content within data loop, using template syntax.
 			 *  - **NOTE:** It should contain `{ key: Array, ... }` value
 			 *    - 'key' name is used as substitution within template as '{=KEY}'

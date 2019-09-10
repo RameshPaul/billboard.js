@@ -82,9 +82,10 @@ const sanitise = str => (isString(str) ? str.replace(/</g, "&lt;").replace(/>/g,
  * @param {d3Selection} node Text node
  * @param {String} text Text value string
  * @param {Array} dy dy value for multilined text
+ * @param {Boolean} toMiddle To be alingned vertically middle
  * @private
  */
-const setTextValue = (node, text, dy = [-1, 1]) => {
+const setTextValue = (node, text, dy = [-1, 1], toMiddle = false) => {
 	if (!node || !isString(text)) {
 		return;
 	}
@@ -96,6 +97,7 @@ const setTextValue = (node, text, dy = [-1, 1]) => {
 
 		if (diff[0] !== diff[1]) {
 			const multiline = text.split("\n");
+			const len = toMiddle ? multiline.length - 1 : 1;
 
 			// reset possible text
 			node.html("");
@@ -103,7 +105,7 @@ const setTextValue = (node, text, dy = [-1, 1]) => {
 			multiline.forEach((v, i) => {
 				node.append("tspan")
 					.attr("x", 0)
-					.attr("dy", `${i === 0 ? dy[0] : dy[1]}em`)
+					.attr("dy", `${i === 0 ? dy[0] * len : dy[1]}em`)
 					.text(v);
 			});
 		}
@@ -156,6 +158,9 @@ const getBrushSelection = ctx => {
 
 	return selection;
 };
+
+// Get boundingClientRect. Cache the evaluated value once it was called.
+const getBoundingRect = node => node.rect || (node.rect = node.getBoundingClientRect());
 
 // retrun random number
 const getRandom = (asStr = true) => Math.random() + (asStr ? "" : 0);
@@ -225,7 +230,13 @@ const getCssRules = styleSheets => {
  * @return {Array} Unique array value
  * @private
  */
-const getUnique = data => data.filter((v, i, self) => self.indexOf(v) === i);
+const getUnique = data => {
+	const isDate = data[0] instanceof Date;
+	const d = (isDate ? data.map(Number) : data)
+		.filter((v, i, self) => self.indexOf(v) === i);
+
+	return isDate ? d.map(v => new Date(v)) : d;
+};
 
 /**
  * Merge array
@@ -279,7 +290,7 @@ const sortValue = (data, isAsc = true) => {
 	if (data[0] instanceof Date) {
 		fn = isAsc ? (a, b) => a - b : (a, b) => b - a;
 	} else {
-		if (isAsc && data.every(Number)) {
+		if (isAsc && !data.every(isNaN)) {
 			fn = (a, b) => a - b;
 		} else if (!isAsc) {
 			fn = (a, b) => (a > b && -1) || (a < b && 1) || (a === b && 0);
@@ -365,7 +376,7 @@ const emulateEvent = {
 		}
 	})(),
 	touch: (el, eventType, params) => {
-		const touchObj = new Touch(Object.assign({
+		const touchObj = new Touch(mergeObj({
 			identifier: Date.now(),
 			target: el,
 			radiusX: 2.5,
@@ -412,6 +423,7 @@ export {
 	emulateEvent,
 	extend,
 	getBrushSelection,
+	getBoundingRect,
 	getCssRules,
 	getMinMax,
 	getOption,

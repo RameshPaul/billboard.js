@@ -4,8 +4,10 @@
  */
 /* eslint-disable */
 /* global describe, beforeEach, it, expect */
+import {select as d3Select} from "d3-selection";
 import CLASS from "../../src/config/classes";
 import util from "../assets/util";
+import {isArray, isObject} from "../../src/internals/util";
 
 describe("SHAPE BUBBLE", () => {
 	let chart;
@@ -55,7 +57,7 @@ describe("SHAPE BUBBLE", () => {
 			setTimeout(() => {
 				chart.$.main.selectAll(`.${CLASS.circles}-data1 circle`)
 					.each(function(v, i) {
-						const r = +d3.select(this).attr("r");
+						const r = +d3Select(this).attr("r");
 
 						if (i === 0) {
 							expect(r).to.be.equal(35);
@@ -86,7 +88,7 @@ describe("SHAPE BUBBLE", () => {
 		it("check for the label text", () => {
 			args.data.columns.forEach((v, i) => {
 				chart.$.main.selectAll(`.${CLASS.chartTexts}-data${i+1} text`).each(function(w, j) {
-					expect(+d3.select(this).text()).to.be.equal(v[j+1]);
+					expect(+d3Select(this).text()).to.be.equal(v[j+1]);
 				});
 			});
 		});
@@ -115,6 +117,51 @@ describe("SHAPE BUBBLE", () => {
 			expect(r).to.be.equal(
 				chart.internal.getBubbleR({value})
 			);
+		});
+	});
+
+	describe("with dimension data", () => {
+		before(() => {
+			args = {
+				data: {
+					columns: [
+						["data1", 20, 40, 60],
+						["data2", {y: 350, z: 150}, 200, {y: 200, z: 150}],
+						["data3", [150, 50], {y: 350, z: 50}, [400, 50]],
+					],
+					type: "bubble"
+				},
+				axis: {
+					x: {
+						type: "category"
+					}
+				}
+			};
+		});
+
+		it("check for the correct rendering", () => {
+			let data = [];
+			let i = 0;
+
+			args.data.columns.forEach(v => {
+				data = data.concat(v.slice(1));
+			});
+
+			chart.$.line.circles.each(function(v) {
+				// check for data value
+				expect(v.value).to.be.deep.equal(data[i]);
+
+				// check for the radius size
+				expect(+this.getAttribute("r")).to.be.equal(chart.internal.getBubbleR(v));
+
+				// check for the y position
+				const y = (isArray(v.value) && v.value[0]) ||
+					(isObject(v.value) && v.value.y) || v.value;
+
+				expect(+this.getAttribute("cy")).to.be.equal(chart.internal.y(y));
+
+				i++;
+			});
 		});
 	});
 });

@@ -3,6 +3,7 @@
  * billboard.js project is licensed under the MIT license
  */
 /* eslint-disable */
+import {select as d3Select} from "d3-selection";
 import bb from "../../src/core";
 import util from "../assets/util";
 import CLASS from "../../src/config/classes";7
@@ -10,94 +11,108 @@ import CLASS from "../../src/config/classes";7
 describe("Interface & initialization", () => {
 	let chart;
 
-	it("Check for billboard.js object", () => {
-		expect(bb).not.to.be.null;
-		expect(typeof bb).to.be.equal("object");
-		expect(typeof bb.generate).to.be.equal("function");
-	});
+	describe("Initialization", () => {
+		const checkElements = $ => {
+			const isD3Node = v => v && "node" in v || false;
 
-	it("Check for initialization", () => {
-		chart = util.generate({
-			title: {
-				text: "test"
-			},
-			data: {
-				columns: [
-					["data1", 30]
-				],
-				labels: {
-					show: true
+			Object.values($).forEach(v1 => {
+				const isNode = isD3Node(v1);
+
+				if (isNode) {
+					expect(isNode).to.be.true;
+				} else {
+					Object.values(v1).forEach(v2 => {
+						expect(isD3Node(v2)).to.be.true;
+					});
+				}
+			});
+		};
+
+		it("Check for billboard.js object", () => {
+			expect(bb).not.to.be.null;
+			expect(typeof bb).to.be.equal("object");
+			expect(typeof bb.generate).to.be.equal("function");
+		});
+
+		it("Check for initialization", () => {
+			chart = util.generate({
+				title: {
+					text: "test"
 				},
-				type: "bar"
-			}
-		});
-		const internal = chart.internal;
+				data: {
+					columns: [
+						["data1", 30]
+					],
+					labels: {
+						show: true
+					},
+					type: "bar"
+				},
+				onrendered: ctx => checkElements(ctx.$)
+			});
+			const internal = chart.internal;
 
-		expect(chart).not.to.be.null;
-		expect(d3.select(chart.element).classed("bb")).to.be.true;
-		expect(internal.svg.node().tagName).to.be.equal("svg");
-		expect(internal.convertInputType()).to.be.equal(internal.inputType);
-
-		expect(chart).to.be.equal(bb.instance[0]);
-
-		// onrendered value should be undefined for default
-		expect(chart.internal.config.onrendered).to.be.undefined;
-	});
-
-	it("should return version string", () => {
-		expect(bb.version.length > 0).to.be.ok;
-	});
-
-	it("should be accessing node elements", () => {
-		const isD3Node = v => v && "node" in v || false;
-
-		Object.values(chart.$).forEach(v1 => {
-			const isNode = isD3Node(v1);
-
-			if (isNode) {
-				expect(isNode).to.be.true;
-			} else {
-				Object.values(v1).forEach(v2 => {
-					expect(isD3Node(v2)).to.be.true;
-				});
-			}
-		});
-	});
-
-	it("instantiate with non-existing element", () => {
-		chart = util.generate({
-			bindto: "#no-exist-element",
-			data: {
-				columns: [
-					["data1", 30]
-				]
-			}
+			expect(chart).not.to.be.null;
+			expect(d3Select(chart.element).classed("bb")).to.be.true;
+			expect(internal.svg.node().tagName).to.be.equal("svg");
+			expect(internal.convertInputType()).to.be.equal(internal.inputType);
+			expect(chart).to.be.equal(bb.instance[0]);
 		});
 
-		expect(chart.element.classList.contains("bb")).to.be.true;
-	});
+		it("should return version string", () => {
+			expect(bb.version.length > 0).to.be.ok;
+		});
 
-	it("instantiate with different classname on wrapper element", () => {
-		const bindtoClassName = "billboard-js";
-		chart = bb.generate({
-			bindto: {
-				element: "#chart",
-				classname: bindtoClassName
-			},
-			data: {
-				columns: [
-					["data1", 30, 200, 100, 400],
-					["data2", 500, 800, 500, 2000]
-				]
+		it("should be accessing node elements", () => {
+			checkElements(chart.$);
+		});
+
+		it("instantiate with non-existing element", () => {
+			chart = util.generate({
+				bindto: "#no-exist-element",
+				data: {
+					columns: [
+						["data1", 30]
+					]
+				}
+			});
+
+			expect(chart.element.classList.contains("bb")).to.be.true;
+		});
+
+		it("instantiate with empty data", () => {
+			let threw = false;
+
+			try {
+				util.generate({data: {}});
+			} catch(e) {
+				threw = true;
+			} finally {
+				expect(threw).to.be.true;
 			}
 		});
 
-		expect(d3.select(chart.element).classed(bindtoClassName)).to.be.true;
+		it("instantiate with different classname on wrapper element", () => {
+			const bindtoClassName = "billboard-js";
+			chart = bb.generate({
+				bindto: {
+					element: "#chart",
+					classname: bindtoClassName
+				},
+				data: {
+					columns: [
+						["data1", 30, 200, 100, 400],
+						["data2", 500, 800, 500, 2000]
+					]
+				}
+			});
+
+			expect(d3Select(chart.element).classed(bindtoClassName)).to.be.true;
+		});
 	});
 
 	describe("auto resize", () => {
 		let container;
-		let innerHTML = "";
 
 		beforeEach(() => {
 			container = document.getElementById("container");
@@ -277,6 +292,133 @@ describe("Interface & initialization", () => {
 			chart.$.main.selectAll(`.${CLASS.axisX} .tick text`).each(function(d, i) {
 				expect(this.textContent).to.be.equal(`${tickPrefix}${i}`);
 			});
+		});
+	});
+
+	describe("check for callbacks if instance param is passed", () => {
+		let chart;
+		const spy = sinon.spy();
+
+		before(() => {
+			const args = {
+				data: {
+					columns: [
+						["data1", 300, 350, 300]
+					]
+				}
+			};
+
+			["beforeinit", "init", "rendered", "afterinit", "resize", "resized", "over", "out"]
+				.forEach(v => {
+					args[`on${v}`] = ctx => spy(v, ctx);
+				});
+
+			chart = util.generate(args);
+		});
+
+		beforeEach(() => spy.resetHistory());
+
+		it("check for the init callbacks", () => {
+			const expected = ["beforeinit", "init", "rendered", "afterinit"];
+
+			spy.args.forEach((v, i) => {
+				expect(v[0]).to.be.equal(expected[i]);
+				expect(v[1]).to.be.equal(chart);
+			});
+		});
+
+		it("check for the resize callbacks", () => {
+			const expected = ["resize", "resized"];
+
+			// when
+			chart.internal.resizeFunction();
+
+			spy.args.forEach((v, i) => {
+				expect(v[0]).to.be.equal(expected[i]);
+				expect(v[1]).to.be.equal(chart);
+			});
+		});
+
+		it("check for the onover/out callbacks", () => {
+			const expected = ["over", "out"];
+
+			// when
+			chart.$.svg.on("mouseenter")();
+			chart.$.svg.on("mouseleave")();
+
+			spy.args.forEach((v, i) => {
+				expect(v[0]).to.be.equal(expected[i]);
+				expect(v[1]).to.be.equal(chart);
+			});
+		});
+	});
+
+	describe("check for lazy rendering", () => {
+		const args = {
+			data: {
+				columns: [
+					["data1", 300, 350, 300]
+				]
+			}
+		};
+
+		it("check lazy rendering & mutation observer: style attribute", done => {
+			const el = document.body.querySelector("#chart");
+
+			// hide to lazy render
+			el.style.display = "none";
+
+			chart = util.generate(args);
+
+			expect(el.innerHTML).to.be.empty;
+
+			el.style.display = "block";
+
+			setTimeout(() => {
+				expect(el.innerHTML).to.be.not.empty;
+				el.style.display = "";
+				done();
+			}, 500);
+		});
+
+		it("check lazy rendering & mutation observer: class attribute", done => {
+			const el = document.body.querySelector("#chart");
+
+			// hide to lazy render
+			el.classList.add("hide");
+
+			chart = util.generate(args);
+
+			expect(el.innerHTML).to.be.empty;
+
+			el.classList.remove("hide");
+
+			setTimeout(() => {
+				expect(el.innerHTML).to.be.not.empty;
+				done();
+			}, 500);
+		});
+
+		it("check lazy rendering via option", done => {
+			const el = document.body.querySelector("#chart");
+
+			args.render = {
+				lazy: true,
+				observe: false
+			};
+
+			chart = util.generate(args);
+
+			// chart shouldn't be rendered
+			expect(el.innerHTML).to.be.empty;
+
+			// call to render
+			chart.flush();
+
+			setTimeout(() => {
+				expect(el.innerHTML).to.be.not.empty;
+				done();
+			}, 500);
 		});
 	});
 });

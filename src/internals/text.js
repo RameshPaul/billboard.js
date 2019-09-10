@@ -8,7 +8,7 @@ import {
 } from "d3-selection";
 import ChartInternal from "./ChartInternal";
 import CLASS from "../config/classes";
-import {capitalize, extend, getRandom, isNumber, isObject, isString} from "./util";
+import {capitalize, extend, getBoundingRect, getRandom, isNumber, isObject, isString} from "./util";
 
 extend(ChartInternal.prototype, {
 	/**
@@ -74,7 +74,11 @@ extend(ChartInternal.prototype, {
 			.attr("text-anchor", d => (config.axis_rotated ? (d.value < 0 ? "end" : "start") : "middle"))
 			.style("fill", $$.updateTextColor.bind($$))
 			.style("fill-opacity", "0")
-			.text((d, i, j) => $$.dataLabelFormat(d.id)(d.value, d.id, i, j));
+			.text((d, i, j) => {
+				const value = $$.isBubbleZType(d) ? $$.getBubbleZData(d.value, "z") : d.value;
+
+				return $$.dataLabelFormat(d.id)(value, d.id, i, j);
+			});
 	},
 
 	updateTextColor(d) {
@@ -144,7 +148,7 @@ extend(ChartInternal.prototype, {
 				.classed(className, true)
 				.text(text)
 				.call(v => {
-					rect = v.node().getBoundingClientRect();
+					rect = getBoundingRect(v.node());
 				})
 				.remove();
 
@@ -196,7 +200,7 @@ extend(ChartInternal.prototype, {
 		const isRotated = config.axis_rotated;
 
 		if (config.data_labels.centered && $$.isBarType(d)) {
-			const rect = textElement.getBoundingClientRect();
+			const rect = getBoundingRect(textElement);
 			const isPositive = d.value >= 0;
 
 			if (isRotated) {
@@ -245,7 +249,9 @@ extend(ChartInternal.prototype, {
 		// show labels regardless of the domain if value is null
 		if (d.value === null) {
 			if (xPos > $$.width) {
-				xPos = $$.width - textElement.getBoundingClientRect().width;
+				const {width} = getBoundingRect(textElement);
+
+				xPos = $$.width - width;
 			} else if (xPos < 0) {
 				xPos = 4;
 			}
@@ -271,7 +277,7 @@ extend(ChartInternal.prototype, {
 		const config = $$.config;
 		const isRotated = config.axis_rotated;
 		const r = config.point_r;
-		const rect = textElement.getBoundingClientRect();
+		const rect = getBoundingRect(textElement);
 		let baseY = 3;
 		let yPos;
 
@@ -284,14 +290,8 @@ extend(ChartInternal.prototype, {
 				baseY += config.point_r / 2.3;
 			}
 
-			if (d.value < 0 || (d.value === 0 && !$$.hasPositiveValue)) {
-				yPos += rect.height;
-
-				if ($$.isBarType(d)) {
-					yPos -= baseY;
-				} else if (!$$.isBarType(d)) {
-					yPos += baseY;
-				}
+			if (d.value < 0 || (d.value === 0 && !$$.hasPositiveValue && $$.hasNegativeValue)) {
+				yPos += rect.height + ($$.isBarType(d) ? -baseY : baseY);
 			} else {
 				let diff = -baseY * 2;
 

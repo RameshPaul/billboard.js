@@ -34,26 +34,26 @@ extend(ChartInternal.prototype, {
 		const indices = {};
 		let i = 0;
 
-		$$.filterTargetsToShow($$.data.targets
-			.filter(typeFilter, $$))
-			.forEach(d => {
-				for (let j = 0, groups; (groups = config.data_groups[j]); j++) {
-					if (groups.indexOf(d.id) < 0) {
-						continue;
-					}
-
-					for (let k = 0, row; (row = groups[k]); k++) {
-						if (row in indices) {
-							indices[d.id] = indices[row];
-							break;
-						}
-					}
+		$$.filterTargetsToShow(
+			$$.data.targets.filter(typeFilter, $$)
+		).forEach(d => {
+			for (let j = 0, groups; (groups = config.data_groups[j]); j++) {
+				if (groups.indexOf(d.id) < 0) {
+					continue;
 				}
 
-				if (isUndefined(indices[d.id])) {
-					indices[d.id] = i++;
+				for (let k = 0, row; (row = groups[k]); k++) {
+					if (row in indices) {
+						indices[d.id] = indices[row];
+						break;
+					}
 				}
-			});
+			}
+
+			if (isUndefined(indices[d.id])) {
+				indices[d.id] = i++;
+			}
+		});
 
 		indices.__max__ = i - 1;
 
@@ -104,9 +104,13 @@ extend(ChartInternal.prototype, {
 		const $$ = this;
 		const isStackNormalized = $$.isStackNormalized();
 
-		return d => (isSub ? $$.getSubYScale(d.id) : $$.getYScale(d.id))(
-			isStackNormalized ? $$.getRatio("index", d, true) : d.value
-		);
+		return d => {
+			const value = isStackNormalized ? $$.getRatio("index", d, true) : (
+				$$.isBubbleZType(d) ? $$.getBubbleZData(d.value, "y") : d.value
+			);
+
+			return (isSub ? $$.getSubYScale(d.id) : $$.getYScale(d.id))(value);
+		};
 	},
 
 	getShapeOffset(typeFilter, indices, isSub) {

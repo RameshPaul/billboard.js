@@ -35,6 +35,7 @@ export default class ChartInternal {
 		$$.data = {};
 		$$.cache = {};
 		$$.axes = {};
+		$$.rendered = false;
 	}
 
 	beforeInit() {
@@ -43,7 +44,7 @@ export default class ChartInternal {
 		$$.callPluginHook("$beforeInit");
 
 		// can do something
-		callFn($$.config.onbeforeinit, $$);
+		callFn($$.config.onbeforeinit, $$, $$.api);
 	}
 
 	afterInit() {
@@ -52,17 +53,68 @@ export default class ChartInternal {
 		$$.callPluginHook("$afterInit");
 
 		// can do something
-		callFn($$.config.onafterinit, $$);
+		callFn($$.config.onafterinit, $$, $$.api);
 	}
 
 	init() {
 		const $$ = this;
+		const config = $$.config;
 
 		$$.initParams();
 
-		const convertedData = $$.convertData($$.config, $$.initWithData);
+		const bindto = {
+			element: config.bindto,
+			classname: "bb"
+		};
 
-		convertedData && $$.initWithData(convertedData);
+		if (isObject(config.bindto)) {
+			bindto.element = config.bindto.element || "#chart";
+			bindto.classname = config.bindto.classname || bindto.classname;
+		}
+
+		// select bind element
+		$$.selectChart = isFunction(bindto.element.node) ?
+			config.bindto.element : d3Select(bindto.element || []);
+
+		if ($$.selectChart.empty()) {
+			$$.selectChart = d3Select(document.body.appendChild(document.createElement("div")));
+		}
+
+		$$.selectChart.html("").classed(bindto.classname, true);
+		$$.initToRender();
+	}
+
+	/**
+	 * Initialize the rendering process
+	 * @param {Boolean} forced Force to render process
+	 * @private
+	 */
+	initToRender(forced) {
+		const $$ = this;
+		const config = $$.config;
+		const target = $$.selectChart;
+		const isHidden = () => target.style("display") === "none" || target.style("visibility") === "hidden";
+
+		const isLazy = config.render.lazy || isHidden();
+		const MutationObserver = window.MutationObserver;
+
+		if (isLazy && MutationObserver && config.render.observe !== false && !forced) {
+			new MutationObserver((mutation, observer) => {
+				if (!isHidden()) {
+					observer.disconnect();
+					!$$.rendered && $$.initToRender(true);
+				}
+			}).observe(target.node(), {
+				attributes: true,
+				attributeFilter: ["class", "style"]
+			});
+		}
+
+		if (!isLazy || forced) {
+			const convertedData = $$.convertData(config, $$.initWithData);
+
+			convertedData && $$.initWithData(convertedData);
+		}
 	}
 
 	initParams() {
@@ -150,26 +202,6 @@ export default class ChartInternal {
 		$$.axis = new Axis($$);
 		config.zoom_enabled && $$.initZoom();
 
-		const bindto = {
-			element: config.bindto,
-			classname: "bb"
-		};
-
-		if (isObject(config.bindto)) {
-			bindto.element = config.bindto.element || "#chart";
-			bindto.classname = config.bindto.classname || bindto.classname;
-		}
-
-		// select bind element
-		$$.selectChart = isFunction(bindto.element.node) ?
-			config.bindto.element : d3Select(bindto.element || []);
-
-		if ($$.selectChart.empty()) {
-			$$.selectChart = d3Select(document.body.appendChild(document.createElement("div")));
-		}
-
-		$$.selectChart.html("").classed(bindto.classname, true);
-
 		// Init data as targets
 		$$.data.xs = {};
 		$$.data.targets = $$.convertDataToTargets(data);
@@ -229,8 +261,8 @@ export default class ChartInternal {
 			const isTouch = $$.inputType === "touch";
 
 			$$.svg
-				.on(isTouch ? "touchstart" : "mouseenter", () => callFn(config.onover, $$))
-				.on(isTouch ? "touchend" : "mouseleave", () => callFn(config.onout, $$));
+				.on(isTouch ? "touchstart" : "mouseenter", () => callFn(config.onover, $$, $$.api))
+				.on(isTouch ? "touchend" : "mouseleave", () => callFn(config.onout, $$, $$.api));
 		}
 
 		config.svg_classname && $$.svg.attr("class", config.svg_classname);
@@ -312,7 +344,7 @@ export default class ChartInternal {
 		$$.updateDimension();
 
 		// oninit callback
-		config.oninit.call($$);
+		callFn(config.oninit, $$, $$.api);
 
 		$$.redraw({
 			withTransition: false,
@@ -336,6 +368,8 @@ export default class ChartInternal {
 
 		// export element of the chart
 		$$.api.element = $$.selectChart.node();
+
+		$$.rendered = true;
 	}
 
 	initChartElements() {
@@ -348,10 +382,10 @@ export default class ChartInternal {
 		notEmpty($$.config.data_labels) && $$.initText();
 	}
 
-	getChartElements() {
+	setChartElements() {
 		const $$ = this;
 
-		return {
+		$$.api.$ = {
 			chart: $$.selectChart,
 			svg: $$.svg,
 			defs: $$.defs,
@@ -596,7 +630,7 @@ export default class ChartInternal {
 
 		// update axis
 		// @TODO: Make 'init' state to be accessible everywhere not passing as argument.
-		$$.redrawAxis(targetsToShow, wth, transitions, flow, initializing);
+		$$.axis.redrawAxis(targetsToShow, wth, transitions, flow, initializing);
 
 		// update circleY based on updated parameters
 		$$.updateCircleY();
@@ -649,113 +683,21 @@ export default class ChartInternal {
 			$$.bindZoomEvent();
 		}
 
+		initializing && $$.setChartElements();
+
 		$$.generateRedrawList(targetsToShow, flow, duration, wth.Subchart);
 		$$.callPluginHook("$redraw", options, duration);
 	}
 
 	/**
-	 * Redraw axis
-	 * @param {Object} targetsToShow targets data to be shown
-	 * @param {Object} wth
-	 * @param {Ojbect} transitions
-	 * @param {Object} flow
-	 * @private
-	 */
-	redrawAxis(targetsToShow, wth, transitions, flow, isInit) {
-		const $$ = this;
-		const config = $$.config;
-		const hasArcType = $$.hasArcType();
-		const hasZoom = !!$$.zoomScale;
-		let tickValues;
-		let intervalForCulling;
-		let xDomainForZoom;
-
-		if (!hasZoom && $$.isCategorized() && targetsToShow.length === 0) {
-			$$.x.domain([0, $$.axes.x.selectAll(".tick").size()]);
-		}
-
-		if ($$.x && targetsToShow.length) {
-			!hasZoom &&
-				$$.updateXDomain(targetsToShow, wth.UpdateXDomain, wth.UpdateOrgXDomain, wth.TrimXDomain);
-
-			if (!config.axis_x_tick_values) {
-				tickValues = $$.axis.updateXAxisTickValues(targetsToShow);
-			}
-		} else if ($$.xAxis) {
-			$$.xAxis.tickValues([]);
-			$$.subXAxis.tickValues([]);
-		}
-
-		if (config.zoom_rescale && !flow) {
-			xDomainForZoom = $$.x.orgDomain();
-		}
-
-		["y", "y2"].forEach(key => {
-			const axis = $$[key];
-
-			if (axis) {
-				const tickValues = config[`axis_${key}_tick_values`];
-				const tickCount = config[`axis_${key}_tick_count`];
-
-				axis.domain($$.getYDomain(targetsToShow, key, xDomainForZoom));
-
-				if (!tickValues && tickCount) {
-					const domain = axis.domain();
-
-					$$[`${key}Axis`].tickValues(
-						$$.axis.generateTickValues(
-							domain,
-							domain.every(v => v === 0) ? 1 : tickCount,
-							$$.isTimeSeriesY()
-						)
-					);
-				}
-			}
-		});
-
-		// axes
-		$$.axis.redraw(transitions, hasArcType, isInit);
-
-		// Update axis label
-		$$.axis.updateLabels(wth.Transition);
-
-		// show/hide if manual culling needed
-		if ((wth.UpdateXDomain || wth.UpdateXAxis) && targetsToShow.length) {
-			if (config.axis_x_tick_culling && tickValues) {
-				for (let i = 1; i < tickValues.length; i++) {
-					if (tickValues.length / i < config.axis_x_tick_culling_max) {
-						intervalForCulling = i;
-						break;
-					}
-				}
-
-				$$.svg.selectAll(`.${CLASS.axisX} .tick text`).each(function(d) {
-					const index = tickValues.indexOf(d);
-
-					index >= 0 &&
-						d3Select(this).style("display", index % intervalForCulling ? "none" : "block");
-				});
-			} else {
-				$$.svg.selectAll(`.${CLASS.axisX} .tick text`).style("display", "block");
-			}
-		}
-
-		// Update sub domain
-		if (wth.Y) {
-			$$.subY && $$.subY.domain($$.getYDomain(targetsToShow, "y"));
-			$$.subY2 && $$.subY2.domain($$.getYDomain(targetsToShow, "y2"));
-		}
-	}
-
-	/**
 	 * Generate redraw list
-	 * @param {Object} targetsToShow targets data to be shown
+	 * @param {Object} targets targets data to be shown
 	 * @param {Object} flow
 	 * @param {Object} duration
 	 * @param {Boolean} withSubchart whether or not to show subchart
 	 * @private
 	 */
-	generateRedrawList(targetsToShow, flow, duration, withSubchart) {
+	generateRedrawList(targets, flow, duration, withSubchart) {
 		const $$ = this;
 		const config = $$.config;
 		const shape = $$.getDrawShape();
@@ -765,8 +707,8 @@ export default class ChartInternal {
 
 		// generate flow
 		const flowFn = flow && $$.generateFlow({
-			targets: targetsToShow,
-			flow: flow,
+			targets,
+			flow,
 			duration: flow.duration,
 			shape,
 			xv: $$.xv.bind($$)
@@ -779,7 +721,7 @@ export default class ChartInternal {
 		// callback function after redraw ends
 		const afterRedraw = flow || config.onrendered ? () => {
 			flowFn && flowFn();
-			callFn(config.onrendered, $$);
+			callFn(config.onrendered, $$, $$.api);
 		} : null;
 
 		if (afterRedraw) {
@@ -1172,7 +1114,7 @@ export default class ChartInternal {
 		const config = $$.config;
 
 		$$.resizeFunction = $$.generateResize();
-		$$.resizeFunction.add(config.onresize.bind($$));
+		$$.resizeFunction.add(() => callFn(config.onresize, $$, $$.api));
 
 		if (config.resize_auto) {
 			$$.resizeFunction.add(() => {
@@ -1187,7 +1129,7 @@ export default class ChartInternal {
 			});
 		}
 
-		$$.resizeFunction.add(config.onresized.bind($$));
+		$$.resizeFunction.add(() => callFn(config.onresized, $$, $$.api));
 
 		// attach resize event
 		window.addEventListener("resize", $$.resizeFunction);
@@ -1224,10 +1166,10 @@ export default class ChartInternal {
 			function loop() {
 				let done = 0;
 
-				transitionsToWait.forEach(t => {
+				for (let i = 0, t; (t = transitionsToWait[i]); i++) {
 					if (t.empty()) {
 						done++;
-						return;
+						continue;
 					}
 
 					try {
@@ -1235,7 +1177,7 @@ export default class ChartInternal {
 					} catch (e) {
 						done++;
 					}
-				});
+				}
 
 				timer && clearTimeout(timer);
 
@@ -1285,20 +1227,23 @@ export default class ChartInternal {
 	convertInputType() {
 		const $$ = this;
 		const config = $$.config;
-		const isMobile = (
-			window.navigator && "maxTouchPoints" in window.navigator && window.navigator.maxTouchPoints > 0
-		) || false;
+		let isMobile = false;
 
-		const hasMouse = config.interaction_inputType_mouse && !isMobile ? ("onmouseover" in window) : false;
-		let hasTouch = false;
+		// https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent#Mobile_Tablet_or_Desktop
+		if (/Mobi/.test(window.navigator.userAgent) && config.interaction_inputType_touch) {
+			// Some Edge desktop return true: https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/20417074/
+			const hasTouchPoints = window.navigator && "maxTouchPoints" in window.navigator && window.navigator.maxTouchPoints > 0;
 
-		if (config.interaction_inputType_touch) {
 			// Ref: https://github.com/Modernizr/Modernizr/blob/master/feature-detects/touchevents.js
 			// On IE11 with IE9 emulation mode, ('ontouchstart' in window) is returning true
-			hasTouch = ("ontouchmove" in window) || (window.DocumentTouch && document instanceof window.DocumentTouch);
+			const hasTouch = ("ontouchmove" in window || (window.DocumentTouch && document instanceof window.DocumentTouch));
+
+			isMobile = hasTouchPoints || hasTouch;
 		}
 
-		return (hasMouse && "mouse") || (hasTouch && "touch") || null;
+		const hasMouse = config.interaction_inputType_mouse && !isMobile ? ("onmouseover" in window) : false;
+
+		return (hasMouse && "mouse") || (isMobile && "touch") || null;
 	}
 
 	/**

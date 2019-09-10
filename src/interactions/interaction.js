@@ -61,9 +61,15 @@ extend(ChartInternal.prototype, {
 				.merge(eventRectUpdate);
 		} else {
 			// Set data and update $$.eventRect
-			const maxDataCountTarget = $$.getMaxDataCountTarget($$.data.targets);
+			const xAxisTickValues = $$.getMaxDataCountTarget();
 
-			eventRects.datum(maxDataCountTarget ? maxDataCountTarget.values : []);
+			// update data's index value to be alinged with the x Axis
+			$$.updateDataIndexByX(xAxisTickValues);
+			$$.updateXs(xAxisTickValues);
+			$$.updatePointClass(true);
+
+			eventRects.datum(xAxisTickValues);
+
 			$$.eventRect = eventRects.selectAll(`.${CLASS.eventRect}`);
 			eventRectUpdate = $$.eventRect.data(d => d);
 
@@ -152,19 +158,21 @@ extend(ChartInternal.prototype, {
 		$$.svg
 			.on("touchstart.eventRect touchmove.eventRect", function() {
 				const eventRect = getEventRect();
+				const event = d3Event;
 
 				if (!eventRect.empty() && eventRect.classed(CLASS.eventRect)) {
-					if ($$.dragging || $$.flowing || $$.hasArcType()) {
+					// if touch points are > 1, means doing zooming interaction. In this case do not execute tooltip codes.
+					if ($$.dragging || $$.flowing || $$.hasArcType() || event.touches.length > 1) {
 						return;
 					}
 
-					preventEvent(d3Event);
+					preventEvent(event);
 					selectRect(this);
 				} else {
 					$$.unselectRect();
 					$$.callOverOutForTouch();
 				}
-			})
+			}, true)
 			.on("touchend.eventRect", () => {
 				const eventRect = getEventRect();
 
@@ -173,7 +181,7 @@ extend(ChartInternal.prototype, {
 						$$.cancelClick && ($$.cancelClick = false);
 					}
 				}
-			});
+			}, true);
 	},
 
 	/**
@@ -206,9 +214,6 @@ extend(ChartInternal.prototype, {
 				rectW = $$.getEventRectWidth();
 				rectX = d => xScale(d.x) - (rectW / 2);
 			} else {
-				// update index for x that is used by prevX and nextX
-				$$.updateXs();
-
 				const getPrevNextX = d => {
 					const index = d.index;
 
@@ -239,7 +244,7 @@ extend(ChartInternal.prototype, {
 
 				rectX = d => {
 					const x = getPrevNextX(d);
-					const thisX = $$.data.xs[d.id][d.index];
+					const thisX = d.x;
 
 					// if there this is a single data point position the eventRect at 0
 					if (x.prev === null && x.next === null) {

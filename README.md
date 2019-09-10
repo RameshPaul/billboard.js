@@ -104,6 +104,15 @@ There're two ways to install from `nightly` branch directly.
 $ npm install git+https://github.com/naver/billboard.js.git#nightly --save
 ```
 
+### Next(Release Canditate) version
+
+Next version is the 'release candidate' build, prior the latest official release.
+
+```sh
+# Run install command from shell
+$ npm install billboard.js@next --save
+```
+
 ### Installation with npm
 
 ```bash
@@ -196,6 +205,7 @@ chart.load( ... );
 ## How to start developing billboard.js?
 
 For anyone interested in developing billboard.js, follow the instructions below.
+> Required Node.js version: `10.10.0+`
 
 ### Development Environment
 

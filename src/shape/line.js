@@ -419,7 +419,7 @@ extend(ChartInternal.prototype, {
 			(withTransition ? $$.mainArea.transition(getRandom()) : $$.mainArea)
 				.attr("d", drawArea)
 				.style("fill", $$.updateAreaColor.bind($$))
-				.style("opacity", d => ($$.isAreaRangeType(d) ? $$.orgAreaOpacity / 1.75 : $$.orgAreaOpacity))
+				.style("opacity", d => String($$.isAreaRangeType(d) ? $$.orgAreaOpacity / 1.75 : $$.orgAreaOpacity))
 		];
 	},
 
@@ -533,13 +533,16 @@ extend(ChartInternal.prototype, {
 		}
 
 		$$.mainCircle = $$.main.selectAll(`.${CLASS.circles}`).selectAll(`.${CLASS.circle}`)
-			.data(d => !$$.isBarType(d) && (!$$.isLineType(d) || $$.shouldDrawPointsForLine(d)) &&
-				$$.labelishData(d));
+			.data(d => !$$.isBarType(d) && (
+				!$$.isLineType(d) || $$.shouldDrawPointsForLine(d)
+			) && $$.labelishData(d));
 
 		$$.mainCircle.exit().remove();
 
+		const fn = $$.point("create", this, $$.pointR.bind($$), $$.color);
+
 		$$.mainCircle = $$.mainCircle.enter()
-			.append($$.point("create", this, $$.classCircle.bind($$), $$.pointR.bind($$), $$.color))
+			.append(fn)
 			.merge($$.mainCircle)
 			.style("stroke", $$.color)
 			.style("opacity", $$.initialOpacityForCircle.bind($$));

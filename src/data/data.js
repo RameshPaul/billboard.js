@@ -191,16 +191,9 @@ extend(ChartInternal.prototype, {
 		};
 	},
 
-	updateXs() {
-		const $$ = this;
-		const targets = $$.data.targets;
-
-		if (targets.length) {
-			$$.xs = [];
-
-			targets[0].values.forEach(v => {
-				$$.xs[v.index] = v.x;
-			});
+	updateXs(values) {
+		if (values.length) {
+			this.xs = values.map(v => v.x);
 		}
 	},
 
@@ -228,10 +221,13 @@ extend(ChartInternal.prototype, {
 
 		// In case of area-range, data is given as: [low, mid, high] or {low, mid, high}
 		// will take the 'mid' as the base value
-		if (value && $$.isAreaRangeType(data)) {
-			value = $$.getAreaRangeData(data, "mid");
+		if (value) {
+			if ($$.isAreaRangeType(data)) {
+				value = $$.getAreaRangeData(data, "mid");
+			} else if ($$.isBubbleZType(data)) {
+				value = $$.getBubbleZData(value, "y");
+			}
 		}
-
 		return value;
 	},
 
@@ -362,23 +358,22 @@ extend(ChartInternal.prototype, {
 		return Math.max(...this.data.targets.map(t => t.values.length));
 	},
 
-	getMaxDataCountTarget(targets) {
-		const length = targets.length;
-		let max = 0;
-		let maxTarget;
+	getMaxDataCountTarget() {
+		let target = this.filterTargetsToShow() || [];
+		const length = target.length;
 
 		if (length > 1) {
-			targets.forEach(t => {
-				if (t.values.length > max) {
-					maxTarget = t;
-					max = t.values.length;
-				}
-			});
-		} else {
-			maxTarget = length ? targets[0] : null;
+			target = target.map(t => t.values)
+				.reduce((a, b) => a.concat(b))
+				.map(v => v.x);
+
+			target = sortValue(getUnique(target))
+				.map((x, index) => ({x, index}));
+		} else if (length) {
+			target = target[0].values;
 		}
 
-		return maxTarget;
+		return target;
 	},
 
 	mapToIds(targets) {
@@ -465,6 +460,8 @@ extend(ChartInternal.prototype, {
 					data.push(...value);
 				} else if (isObject(value) && "high" in value) {
 					data.push(...Object.values(value));
+				} else if ($$.isBubbleZType(v)) {
+					data.push($$.getBubbleZData(value, "y"));
 				} else {
 					if (isMultipleX) {
 						data[$$.getIndexByX(v.x, xs)] = value;
@@ -833,5 +830,31 @@ extend(ChartInternal.prototype, {
 		}
 
 		return asPercent && ratio ? ratio * 100 : ratio;
+	},
+
+	/**
+	 * Sort data index to be aligned with x axis.
+	 * @param {Array} tickValues Tick array values
+	 * @private
+	 */
+	updateDataIndexByX(tickValues) {
+		const $$ = this;
+
+		$$.data.targets.forEach(t => {
+			t.values.forEach((v, i) => {
+				tickValues.some((d, j) => {
+					if (+d.x === +v.x) {
+						v.index = j;
+						return true;
+					}
+
+					return false;
+				});
+
+				if (!isNumber(v.index) || v.index === -1) {
+					v.index = i;
+				}
+			});
+		});
 	}
 });

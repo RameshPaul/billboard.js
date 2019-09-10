@@ -5,6 +5,7 @@
 import { Axis } from "./axis";
 import { ChartTypes, d3Selection, DataItem, PrimitiveArray } from "./types";
 import Stanford from "./plugin/stanford/index";
+import { Chart } from "./chart";
 
 export interface ChartOptions {
 	/**
@@ -286,7 +287,7 @@ export interface ChartOptions {
 		/**
 		 * Set the max bubble radius value
 		 */
-		maxR?: (d: {}) => number | number;
+		maxR?: ((d: {}) => number) | number;
 	};
 
 	radar?: {
@@ -304,6 +305,18 @@ export interface ChartOptions {
 			};
 
 			text?: {
+				position?: {
+					/**
+					 * x coordinate position, relative the original
+					 */
+					x?: number;
+
+					/**
+					 * y coordinate position, relative the original
+					 */
+					y?: number;
+				};
+
 				/**
 				 * Show or hide axis text.
 				 */
@@ -370,7 +383,7 @@ export interface ChartOptions {
 			/**
 			 * Set ratio of labels position.
 			 */
-			ratio?: (d: DataItem, radius: number, h: number) => void | number
+			ratio?: ((d: DataItem, radius: number, h: number) => void) | number
 		};
 		/**
 		 * Enable or disable expanding pie pieces.
@@ -513,42 +526,42 @@ export interface ChartOptions {
 	/**
 	 * Set a callback to execute when the chart is initialized.
 	 */
-	oninit?(): void;
+	oninit?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute after the chart is initialized
 	 */
-	onafterinit?(): void;
+	onafterinit?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute before the chart is initialized
 	 */
-	onbeforeinit?(): void;
+	onbeforeinit?(ctx: Chart): void;
 
 	/**
 	 * Set a callback which is executed when the chart is rendered. Basically, this callback will be called in each time when the chart is redrawed.
 	 */
-	onrendered?(): void;
+	onrendered?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute when mouse/touch enters the chart.
 	 */
-	onover?(): void;
+	onover?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute when mouse/touch leaves the chart.
 	 */
-	onout?(): void;
+	onout?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute when user resizes the screen.
 	 */
-	onresize?(): void;
+	onresize?(ctx: Chart): void;
 
 	/**
 	 * Set a callback to execute when screen resize finished.
 	 */
-	onresized?(): void;
+	onresized?(ctx: Chart): void;
 
 	/**
 	 * Set 'clip-path' attribute for chart element.
@@ -561,6 +574,22 @@ export interface ChartOptions {
 	 * Set plugins
 	 */
 	plugins?: Stanford | any[];
+
+	/**
+	 * Control the render timing
+	 */
+	render?: {
+		/**
+		 * Make to not render at initialization (enabled by default when bind element's visibility is hidden).
+		 */
+		lazy?: boolean;
+
+		/**
+		 * Observe bind element's visibility(`display` or `visiblity` inline css property or class value) & render when is visible automatically (for IEs, only works IE11+).
+		 * When set to **false**, call [`.flush()`](./Chart.html#flush) to render.
+		 */
+		observe?: boolean;
+	};
 }
 
 export interface AreaLinearGradientOptions {
@@ -680,7 +709,7 @@ export interface LegendOptions {
 		 *  color {String}: color string
 		 *  data {Array}: data array
 		 */
-		template?: (title: string, color: string, data: DataItem[]) => void | string;
+		template?: ((title: string, color: string, data: DataItem[]) => void) | string;
 	};
 
 	/**
@@ -747,12 +776,12 @@ export interface TooltipOptions {
 	 * Specified function receives data, defaultTitleFormat, defaultValueFormat and color of the data point to show.
 	 * If tooltip.grouped is true, data includes multiple data points.
 	 */
-	contents?: (
+	contents?: ((
 		data: any,
 		defaultTitleFormat: string,
 		defaultValueFormat: string,
 		color: any
-	) => string | {
+	) => string) | {
 		/**
 		 * Set CSS selector or element reference to bind tooltip.
 		 */

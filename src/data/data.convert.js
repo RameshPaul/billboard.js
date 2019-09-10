@@ -50,11 +50,13 @@ extend(ChartInternal.prototype, {
 			throw Error("url or json or rows or columns is required.");
 		}
 
-		return data;
+		return isArray(data) && data;
 	},
 
 	convertUrlToData(url, mimeType = "csv", headers, keys, done) {
 		const req = new XMLHttpRequest();
+
+		req.open("GET", url);
 
 		if (headers) {
 			Object.keys(headers).forEach(key => {
@@ -62,7 +64,6 @@ extend(ChartInternal.prototype, {
 			});
 		}
 
-		req.open("GET", url);
 		req.onreadystatechange = () => {
 			if (req.readyState === 4) {
 				if (req.status === 200) {
@@ -224,16 +225,19 @@ extend(ChartInternal.prototype, {
 	convertDataToTargets(data, appendXs) {
 		const $$ = this;
 		const config = $$.config;
+		const isTimeSeries = $$.isTimeSeries();
+
 		const dataKeys = Object.keys(data[0] || {});
 		const ids = dataKeys.length ? dataKeys.filter($$.isNotX, $$) : [];
 		const xs = dataKeys.length ? dataKeys.filter($$.isX, $$) : [];
+
 		let xsData;
 
 		// save x for update data by load when custom x and bb.x API
 		ids.forEach(id => {
 			const xKey = this.getXKey(id);
 
-			if (this.isCustomX() || this.isTimeSeries()) {
+			if (this.isCustomX() || isTimeSeries) {
 				// if included in input data
 				if (xs.indexOf(xKey) >= 0) {
 					xsData = ((appendXs && $$.data.xs[id]) || [])
@@ -259,7 +263,7 @@ extend(ChartInternal.prototype, {
 
 		// check x is defined
 		ids.forEach(id => {
-			if (!xsData) {
+			if (!this.data.xs[id]) {
 				throw new Error(`x is not defined for id = "${id}".`);
 			}
 		});
@@ -280,8 +284,8 @@ extend(ChartInternal.prototype, {
 					let value = d[id];
 					let x;
 
-					value = value !== null && !isNaN(value) ?
-						+d[id] : (isArray(value) || (isObject(value) && value.high) ? value : null);
+					value = value !== null && !isNaN(value) && !isObject(value) ?
+						+d[id] : (isArray(value) || isObject(value) ? value : null);
 
 					// use x as categories if custom x and categorized
 					if (isCategorized && index === 0 && !isUndefined(rawX)) {

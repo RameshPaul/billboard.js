@@ -3,6 +3,7 @@
  * billboard.js project is licensed under the MIT license
  */
 /* eslint-disable */
+import {selectAll as d3SelectAll} from "d3-selection";
 import CLASS from "../../src/config/classes";
 import util from "../assets/util";
 
@@ -147,7 +148,7 @@ describe("SHAPE ARC", () => {
 			expect(chart.internal.pie.padAngle()()).to.be.equal(value);
 			expect(chart.$.main.selectAll(`text.${CLASS.chartArcsTitle} tspan`).size()).to.be.equal(3);
 
-			d3.selectAll(`.${CLASS.chartArc} text`).each(function(d) {
+			d3SelectAll(`.${CLASS.chartArc} text`).each(function(d) {
 				const value = parseInt(this.textContent);
 
 				expect(value).to.be.equal(d.value);
@@ -176,7 +177,7 @@ describe("SHAPE ARC", () => {
 			expect(internal.pie.padAngle()()).to.be.equal(padding * 0.01);
 			expect(internal.innerRadius).to.be.equal(innerRadius);
 
-			d3.selectAll(`.${CLASS.chartArc} text`).each(function(d) {
+			d3SelectAll(`.${CLASS.chartArc} text`).each(function(d) {
 				const value = parseInt(this.textContent);
 
 				expect(value).to.be.equal(d.value);
@@ -572,6 +573,52 @@ describe("SHAPE ARC", () => {
 
 		it("should be multilined in donut", () => {
 			checkMultiline(chart.$.arc);
+		});
+	});
+
+	describe("check for multiline text position", () => {
+		let chart;
+		let args = {
+			data: {
+				columns: [
+					["data1", 50],
+					["data2", 50]
+				],
+				type: "donut"
+			},
+			donut: {
+				title: "Title 1\nTitle 2"
+			}
+		};
+
+		beforeEach(() => {
+			chart = util.generate(args);
+		});
+
+		const checkAtMiddle = done => {
+			const arc = chart.$.arc.node().getBoundingClientRect();
+			const title = chart.$.arc.select("text").node().getBoundingClientRect();
+
+			const titlePos = title.top - arc.top + (title.height / 2);
+
+			expect(titlePos).to.be.closeTo(arc.height / 2, 2);
+			done && done();
+		};
+
+		it("check for two lined text position", done => {
+			setTimeout(() => {
+				checkAtMiddle(done);
+			}, 100);
+		});
+
+		it("set option args.donut.title", () => {
+			args.donut.title = "Title 1\nTitle 2\nTitle 3";
+		});
+
+		it("check for three lined text position", done => {
+			setTimeout(() => {
+				checkAtMiddle(done);
+			}, 100);
 		});
 	});
 
