@@ -872,42 +872,63 @@ export default class Options {
 
 			/**
 			 * Set a callback for click event on each data point.<br><br>
-			 * This callback will be called when each data point clicked and will receive d and element as the arguments. d is the data clicked and element is the element clicked. In this callback, this will be the Chart object.
+			 * This callback will be called when each data point clicked and will receive `d` and element as the arguments.
+			 * - `d` is the data clicked and element is the element clicked.
+			 * - `element` is the current interacting svg element.
+			 * - In this callback, `this` will be the Chart object.
 			 * @name data․onclick
 			 * @memberof Options
 			 * @type {Function}
 			 * @default function() {}
 			 * @example
 			 * data: {
-			 *     onclick: function(d, element) { ... }
+			 *     onclick: function(d, element) {
+			 *        // d - ex) {x: 4, value: 150, id: "data1", index: 4, name: "data1"}
+			 *        // element - <circle>
+			 *        ...
+			 *     }
 			 * }
 			 */
 			data_onclick: () => {},
 
 			/**
 			 * Set a callback for mouse/touch over event on each data point.<br><br>
-			 * This callback will be called when mouse cursor or via touch moves onto each data point and will receive d as the argument. d is the data where mouse cursor moves onto. In this callback, this will be the Chart object.
+			 * This callback will be called when mouse cursor or via touch moves onto each data point and will receive `d` and `element` as the argument.
+			 * - `d` is the data where mouse cursor moves onto.
+			 * - `element` is the current interacting svg element.
+			 * - In this callback, `this` will be the Chart object.
 			 * @name data․onover
 			 * @memberof Options
 			 * @type {Function}
 			 * @default function() {}
 			 * @example
 			 * data: {
-			 *     onover: function(d) { ... }
+			 *     onover: function(d, element) {
+			 *        // d - ex) {x: 4, value: 150, id: "data1", index: 4}
+			 *        // element - <circle>
+			 *        ...
+			 *     }
 			 * }
 			 */
 			data_onover: () => {},
 
 			/**
 			 * Set a callback for mouse/touch out event on each data point.<br><br>
-			 * This callback will be called when mouse cursor or via touch moves out each data point and will receive d as the argument. d is the data where mouse cursor moves out. In this callback, this will be the Chart object.
+			 * This callback will be called when mouse cursor or via touch moves out each data point and will receive `d` as the argument.
+			 * - `d` is the data where mouse cursor moves out.
+			 * - `element` is the current interacting svg element.
+			 * - In this callback, `this` will be the Chart object.
 			 * @name data․onout
 			 * @memberof Options
 			 * @type {Function}
 			 * @default function() {}
 			 * @example
 			 * data: {
-			 *     onout: function(d) { ... }
+			 *     onout: function(d, element) {
+			 *        // d - ex) {x: 4, value: 150, id: "data1", index: 4}
+			 *        // element - <circle>
+			 *        ...
+			 *     }
 			 * }
 			 */
 			data_onout: () => {},
@@ -3189,7 +3210,7 @@ export default class Options {
 			 * @property {Number} [gauge.expand.duration=50] Set the expand transition time in milliseconds.
 			 * @property {Number} [gauge.min=0] Set min value of the gauge.
 			 * @property {Number} [gauge.max=100] Set max value of the gauge.
-			 * @property {Number} [gauge.startingAngle=-1 * Math.PI / 2]
+			 * @property {Number} [gauge.startingAngle=-1 * Math.PI / 2] Set starting angle where data draws.
 			 * @property {String} [gauge.title=""] Set title of gauge chart. Use `\n` character to enter line break.
 			 * @property {String} [gauge.units] Set units of the gauge.
 			 * @property {Number} [gauge.width] Set width of gauge chart.

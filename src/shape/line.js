@@ -204,9 +204,8 @@ extend(ChartInternal.prototype, {
 	generateGetLinePoints(lineIndices, isSubValue) { // partial duplication of generateGetBarPoints
 		const $$ = this;
 		const config = $$.config;
-		const lineTargetsNum = lineIndices.__max__ + 1;
 		const isSub = !!isSubValue;
-		const x = $$.getShapeX(0, lineTargetsNum, lineIndices, isSub);
+		const x = $$.getShapeX(0, lineIndices, isSub);
 		const y = $$.getShapeY(isSub);
 		const lineOffset = $$.getShapeOffset($$.isLineType, lineIndices, isSub);
 		const yScale = isSub ? $$.getSubYScale : $$.getYScale;
@@ -496,8 +495,7 @@ extend(ChartInternal.prototype, {
 		// partial duplication of generateGetBarPoints
 		const $$ = this;
 		const config = $$.config;
-		const areaTargetsNum = areaIndices.__max__ + 1;
-		const x = $$.getShapeX(0, areaTargetsNum, areaIndices, !!isSub);
+		const x = $$.getShapeX(0, areaIndices, !!isSub);
 		const y = $$.getShapeY(!!isSub);
 		const areaOffset = $$.getShapeOffset($$.isAreaType, areaIndices, !!isSub);
 		const yScale = isSub ? $$.getSubYScale : $$.getYScale;
@@ -698,11 +696,9 @@ extend(ChartInternal.prototype, {
 			cy = y;
 		}
 
-		const is = Math.sqrt(
+		return Math.sqrt(
 			Math.pow(cx - mouse[0], 2) + Math.pow(cy - mouse[1], 2)
 		) < (r || this.config.point_sensitivity);
-
-		return is;
 	},
 
 	isWithinStep(that, y) {
